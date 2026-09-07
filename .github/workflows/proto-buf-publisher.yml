@@ -14,6 +14,8 @@ on:
 
 jobs:
   push:
+    # Disabled on this fork: publishes to public buf.build.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5

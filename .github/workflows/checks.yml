@@ -14,6 +14,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -46,6 +51,12 @@ jobs:
     needs: setup-dependencies
     steps:
       - uses: actions/checkout@v6
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -59,6 +70,12 @@ jobs:
     needs: setup-dependencies
     steps:
       - uses: actions/checkout@v6
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
+
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
@@ -76,6 +93,11 @@ jobs:
         shard: [1, 2, 3, 4]
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -131,7 +153,9 @@ jobs:
           echo "mode: atomic" > coverage.txt
           find artifacts -name '*.out' | xargs -I{} tail -n +2 {} >> coverage.txt
 
+      # Disabled on this fork: uploads to public codecov.io.
       - name: Upload to Codecov
+        if: false
         run: bash <(curl -s https://codecov.io/bash) -f coverage.txt
 
   test-system:
@@ -139,6 +163,11 @@ jobs:
     needs: test-cover
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -175,6 +204,11 @@ jobs:
     needs: test-cover
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -201,6 +235,11 @@ jobs:
     needs: setup-dependencies
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -216,6 +255,12 @@ jobs:
       IMAGE_NAME: cosmwasm/wasmd
     steps:
       - uses: actions/checkout@v5
+      - name: Configure access to the private CosmWasm forks
+        id: auth
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
 
       - uses: actions/setup-go@v5
         with:
@@ -225,9 +270,14 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Build Docker image
+        env:
+          TOKEN: ${{ steps.auth.outputs.token }}
         run: |
           SHA=${{ github.sha }}
-          docker build --pull -t $IMAGE_NAME:$SHA .
+          # Build secret: the redirect for go mod download inside the container.
+          printf '[url "https://x-access-token:%s@github.com/CosmWasm/priv_wasmvm_sec"]\n\tinsteadOf = https://github.com/CosmWasm/wasmvm\n' \
+            "$TOKEN" > "$RUNNER_TEMP/gitconfig"
+          docker build --secret id=gitconfig,src="$RUNNER_TEMP/gitconfig" --pull -t $IMAGE_NAME:$SHA .
 
       - name: Check wasmvm version
         run: |
@@ -241,8 +291,9 @@ jobs:
             exit 1
           fi
 
+      # Disabled on this fork: publishes to public Docker Hub.
       - name: Login to DockerHub
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        if: false
         env:
           DOCKER_USER: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKER_PASS: ${{ secrets.DOCKERHUB_TOKEN }}
@@ -250,7 +301,7 @@ jobs:
           echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin
 
       - name: Push Docker image
-        if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
+        if: false
         run: |
           SHA=${{ github.sha }}
           docker push $IMAGE_NAME:$SHA
