@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 # docker build . -t cosmwasm/wasmd:latest
 # docker run --rm -it cosmwasm/wasmd:latest /bin/sh
 
@@ -14,6 +15,10 @@ RUN apk add git
 
 WORKDIR /code
 COPY . /code/
+# Needs --secret id=gitconfig,src=<gitconfig redirecting wasmvm to the private fork>
+ENV GOPRIVATE=github.com/CosmWasm/wasmvm
+RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig go mod download
+
 # See https://github.com/CosmWasm/wasmvm/releases
 ADD https://github.com/CosmWasm/wasmvm/releases/download/v3.0.7/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
 ADD https://github.com/CosmWasm/wasmvm/releases/download/v3.0.7/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a

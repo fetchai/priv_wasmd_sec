@@ -13,6 +13,8 @@ env:
 
 jobs:
   release:
+    # Disabled on this fork: pushes to public Docker Hub.
+    if: false
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code

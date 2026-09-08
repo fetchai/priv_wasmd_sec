@@ -21,6 +21,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
+      - name: Configure access to the private CosmWasm forks
+        uses: ./.github/actions/private-deps-auth
+        with:
+          app-id: ${{ vars.PRIV_REPOS_APP_ID }}
+          private-key: ${{ secrets.PRIV_REPOS_APP_PRIVATE_KEY }}
+
       # Initializes the CodeQL tools for scanning.
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
