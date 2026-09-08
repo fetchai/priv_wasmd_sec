@@ -19,11 +19,9 @@ COPY . /code/
 ENV GOPRIVATE=github.com/CosmWasm/wasmvm
 RUN --mount=type=secret,id=gitconfig,target=/root/.gitconfig go mod download
 
-# See https://github.com/CosmWasm/wasmvm/releases
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v2.3.4/libwasmvm_muslc.aarch64.a /lib/libwasmvm_muslc.aarch64.a
-ADD https://github.com/CosmWasm/wasmvm/releases/download/v2.3.4/libwasmvm_muslc.x86_64.a /lib/libwasmvm_muslc.x86_64.a
-RUN sha256sum /lib/libwasmvm_muslc.aarch64.a | grep 9a88d39e59e38f7819e3c0d849d09c4cd0b62e40d61ede8564f84a2accbe7c3b
-RUN sha256sum /lib/libwasmvm_muslc.x86_64.a | grep fb9760c06da3871566df4daed7472e5e0856f4f3c7221728bb976818ee1b6128
+# The private fork ships the muslc static libs as .xz inside the Go module.
+RUN ARCH="$(uname -m)" \
+  && unxz -c "$(go list -m -f '{{.Dir}}' github.com/CosmWasm/wasmvm/v2)/internal/api/libwasmvm_muslc.$ARCH.a.xz" > "/lib/libwasmvm_muslc.$ARCH.a"
 
 # force it to use static lib (from above) not standard libgo_cosmwasm.so file
 RUN LEDGER_ENABLED=false BUILD_TAGS=muslc LINK_STATICALLY=true make build
