@@ -1,3 +1,9 @@
+> ⚠️ **CONFIDENTIAL PRIVATE SECURITY HOTFIX**
+>
+> This is a private fork carrying an unreleased fix for a critical severity
+> CosmWasm vulnerability. Do not share, fork, or discuss publicly until
+> disclosure. **Read [HOTFIX.md](HOTFIX.md) before doing anything else.**
+
 # Wasm Zone
 
 [![CircleCI](https://circleci.com/gh/CosmWasm/wasmd/tree/main.svg?style=shield)](https://circleci.com/gh/CosmWasm/wasmd/tree/main)
