@@ -25,12 +25,12 @@ The private disclosure window for this vulnerability is 2 weeks, beginning Thurs
 
 Use the tag matching your release line. `main` tracks upstream and does not contain the fix.
 
-| Your release line | Tag | Branch | wasmvm dependency |
+| Your release line | Tag | Branch | wasmvm replacement |
 |---|---|---|---|
-| `v0.54.x` | `v0.54.10` | `security/v0.54.x` | `github.com/CosmWasm/wasmvm/v2 v2.2.9` |
-| `v0.60.x` | `v0.60.9` | `security/v0.60.x` | `github.com/CosmWasm/wasmvm/v2 v2.3.5` |
-| `v0.61.x` | `v0.61.15` | `security/v0.61.x` | `github.com/CosmWasm/wasmvm/v3 v3.0.8` |
-| `v0.70.x` | `v0.70.4` | `security/v0.70.x` | `github.com/CosmWasm/wasmvm/v3 v3.0.8` |
+| `v0.54.x` | `v0.54.10` | `security/v0.54.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.2.9` |
+| `v0.60.x` | `v0.60.9` | `security/v0.60.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5` |
+| `v0.61.x` | `v0.61.15` | `security/v0.61.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8` |
+| `v0.70.x` | `v0.70.4` | `security/v0.70.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8` |
 
 Chains on a release line not listed above should upgrade to the closest version that is.
 
@@ -66,11 +66,13 @@ For example, if you are on `v0.60.x`:
 ```go
 replace (
 	github.com/CosmWasm/wasmd => github.com/CosmWasm/priv_wasmd_sec v0.60.9
-	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec v2.3.5
+	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5
 )
 ```
 
-Two directives are required: the patched `wasmd` depends on a `wasmvm` version that is available only in the private `wasmvm` repository. Note that the `wasmvm` module path is `/v2` on the `v0.54.x` and `v0.60.x` lines and `/v3` on the `v0.61.x` and `v0.70.x` lines.
+Two directives are required: the patched `wasmd` depends on a `wasmvm` version that is available only in the private `wasmvm` repository.
+
+The `/v2` or `/v3` suffix appears on **both sides** of the `wasmvm` directive and is required on both. It is `/v2` for the `v0.54.x` and `v0.60.x` lines and `/v3` for the `v0.61.x` and `v0.70.x` lines. Omitting it on the right-hand side fails with `version "v2.3.5" invalid: should be v0 or v1, not v2`.
 
 Then, tidy using the `GOPRIVATE` variable:
 
