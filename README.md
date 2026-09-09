@@ -27,14 +27,14 @@ Use the tag matching your release line. `main` tracks upstream and does not cont
 
 | Your release line | Tag | Branch | wasmvm replacement |
 |---|---|---|---|
-| `v0.54.x` | `v0.54.10` | `security/v0.54.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.2.9` |
-| `v0.60.x` | `v0.60.9` | `security/v0.60.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5` |
-| `v0.61.x` | `v0.61.15` | `security/v0.61.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8` |
-| `v0.70.x` | `v0.70.4` | `security/v0.70.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8` |
+| `v0.54.x` | `v0.54.10-rc.2` | `security/v0.54.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.2.9-rc.2` |
+| `v0.60.x` | `v0.60.9-rc.2` | `security/v0.60.x` | `github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5-rc.2` |
+| `v0.61.x` | `v0.61.15-rc.2` | `security/v0.61.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8-rc.2` |
+| `v0.70.x` | `v0.70.4-rc.2` | `security/v0.70.x` | `github.com/CosmWasm/priv_wasmvm_sec/v3 v3.0.8-rc.2` |
 
 Chains on a release line not listed above should upgrade to the closest version that is.
 
-Release candidates are published ahead of the final tags, as `-rc.N` suffixes on the same versions.
+The `-rc.2` suffix is intentional and is the tag to use. These stay as release candidates for the duration of the private window so the correct version is easy to identify and a further hotfix can be added without renumbering. The final tags are published, without version holes, only after the disclosure window closes.
 
 ---
 
@@ -65,14 +65,14 @@ For example, if you are on `v0.60.x`:
 
 ```go
 replace (
-	github.com/CosmWasm/wasmd => github.com/CosmWasm/priv_wasmd_sec v0.60.9
-	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5
+	github.com/CosmWasm/wasmd => github.com/CosmWasm/priv_wasmd_sec v0.60.9-rc.2
+	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec/v2 v2.3.5-rc.2
 )
 ```
 
 Two directives are required: the patched `wasmd` depends on a `wasmvm` version that is available only in the private `wasmvm` repository.
 
-The `/v2` or `/v3` suffix appears on **both sides** of the `wasmvm` directive and is required on both. It is `/v2` for the `v0.54.x` and `v0.60.x` lines and `/v3` for the `v0.61.x` and `v0.70.x` lines. Omitting it on the right-hand side fails with `version "v2.3.5" invalid: should be v0 or v1, not v2`.
+The `/v2` or `/v3` suffix appears on **both sides** of the `wasmvm` directive and is required on both. It is `/v2` for the `v0.54.x` and `v0.60.x` lines and `/v3` for the `v0.61.x` and `v0.70.x` lines. Omitting it on the right-hand side fails with `version "v2.3.5-rc.2" invalid: should be v0 or v1, not v2`.
 
 Then export `GOPRIVATE` and tidy:
 
@@ -87,7 +87,9 @@ Keep `GOPRIVATE` exported for the build as well. Build targets such as `make bui
 
 ### 3. Build and Deploy
 
-Rebuild your node binary using your standard process, distribute the compiled binary to validators, and perform a coordinated upgrade.
+Building from this repository is not the same as building from the public one. Depending on whether you link `libwasmvm` dynamically or statically, your build script or Dockerfile will need changes. Separate build instructions covering both cases are being provided; do not assume your existing build target works unchanged.
+
+Once built, distribute the compiled binary to your validators and perform a coordinated upgrade.
 
 ---
 
