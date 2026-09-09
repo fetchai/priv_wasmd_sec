@@ -21,13 +21,20 @@ This upgrade must be performed as a coordinated upgrade.
 
 The private disclosure window for this vulnerability is 2 weeks, beginning Wednesday, September 9th. After the disclosure window closes, the fixes will be merged into the public repo at 10am EST on Wednesday, September 23rd 2026 and released in a patch release.
 
-### Hotfix Branches
+### Hotfix Tags
 
-The fix is provided on the following branch. `main` tracks upstream and does not contain the fix.
+Use the tag matching your release line. `main` tracks upstream and does not contain the fix.
 
-- `security/v0.60.x` for the `v0.60.x` release line
+| Your release line | Tag | Branch | wasmvm dependency |
+|---|---|---|---|
+| `v0.54.x` | `v0.54.10` | `security/v0.54.x` | `github.com/CosmWasm/wasmvm/v2 v2.2.9` |
+| `v0.60.x` | `v0.60.9` | `security/v0.60.x` | `github.com/CosmWasm/wasmvm/v2 v2.3.5` |
+| `v0.61.x` | `v0.61.15` | `security/v0.61.x` | `github.com/CosmWasm/wasmvm/v3 v3.0.8` |
+| `v0.70.x` | `v0.70.4` | `security/v0.70.x` | `github.com/CosmWasm/wasmvm/v3 v3.0.8` |
 
-No hotfix tag has been published yet, so pin by commit from the head of that branch.
+Chains on a release line not listed above should upgrade to the closest version that is.
+
+Release candidates are published ahead of the final tags, as `-rc.N` suffixes on the same versions.
 
 ---
 
@@ -52,18 +59,18 @@ If you choose to use HTTPS, please follow the instructions here: https://go.dev/
 
 ### 2. Update `go.mod`
 
-Add `replace` directives pointing to this repository and to the private `wasmvm` repository, using the branch that matches your release line.
+Add `replace` directives for both this repository and the private `wasmvm` repository, using the tag and wasmvm dependency from the table above.
 
-If you are on `v0.60.x`:
+For example, if you are on `v0.60.x`:
 
 ```go
 replace (
-	github.com/CosmWasm/wasmd => github.com/CosmWasm/priv_wasmd_sec <commit-sha>
-	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec v2.3.5-rc.2
+	github.com/CosmWasm/wasmd => github.com/CosmWasm/priv_wasmd_sec v0.60.9
+	github.com/CosmWasm/wasmvm/v2 => github.com/CosmWasm/priv_wasmvm_sec v2.3.5
 )
 ```
 
-Two directives are required: the patched `wasmd` depends on `wasmvm v2.3.5-rc.2`, which is available only in the private `wasmvm` repository.
+Two directives are required: the patched `wasmd` depends on a `wasmvm` version that is available only in the private `wasmvm` repository. Note that the `wasmvm` module path is `/v2` on the `v0.54.x` and `v0.60.x` lines and `/v3` on the `v0.61.x` and `v0.70.x` lines.
 
 Then, tidy using the `GOPRIVATE` variable:
 
