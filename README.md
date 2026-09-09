@@ -34,6 +34,16 @@ Use the tag matching your release line. `main` tracks upstream and does not cont
 
 Chains on a release line not listed above should upgrade to the closest version that is.
 
+#### Static library checksums
+
+The `libwasmvm_muslc.<arch>.a` extracted from the private wasmvm module must match one of these sha256 values. See step 3 below.
+
+| wasmvm | `x86_64` | `aarch64` |
+|---|---|---|
+| `v2.2.9-rc.2` | `3032aa5b8d486625327073dc60e007bcebd5a6202cdcecb7d5b21ca8bc0a4889` | `ebd660d24d0d698c4784f8d4598e487c7fd8c8f8b64f70282734cf9669527a74` |
+| `v2.3.5-rc.2` | `4d1ed8a888e0c86057994d939a03f636609366332a2947d387bf891421cc49c9` | `d4b1bc176e8bda0d073658200ca67629ba9b445d47ed2a5c456eac60468a4660` |
+| `v3.0.8-rc.2` | `6863af60cebf04d094bc3bcf22a2777e1e1b4f1295d54e3b9a1082a3b359de8a` | `46f4d0913331096f2926f28d5d0f4405eb700f571be229cf8774d942619370a4` |
+
 The `-rc.2` suffix is intentional and is the tag to use. These stay as release candidates for the duration of the private window so the correct version is easy to identify and a further hotfix can be added without renumbering. The final tags are published, without version holes, only after the disclosure window closes.
 
 ---
@@ -87,9 +97,41 @@ Keep `GOPRIVATE` exported for the build as well. Build targets such as `make bui
 
 ### 3. Build and Deploy
 
-Building from this repository is not the same as building from the public one. Depending on whether you link `libwasmvm` dynamically or statically, your build script or Dockerfile will need changes. Separate build instructions covering both cases are being provided; do not assume your existing build target works unchanged.
+Building from this repository is not the same as building from the public one. Depending on whether you link `libwasmvm` dynamically or statically, your build script or Dockerfile will need changes; do not assume your existing build target works unchanged.
 
-Once built, distribute the compiled binary to your validators and perform a coordinated upgrade.
+**Dynamic build on the host** (`make build`): keep `GOPRIVATE` exported and build as usual. Ship the patched `libwasmvm.<arch>.so` with the binary and have validators install it in place of the public one:
+
+```bash
+cp "$(go list -m -f '{{.Dir}}' github.com/CosmWasm/wasmvm/v2)/internal/api/libwasmvm.$(uname -m).so" .
+```
+
+**Static build in Docker** (e.g. `make build-static-linux-amd64`): two changes are needed.
+
+1. On the host, after step 2, copy the two private modules into the build context:
+
+```bash
+go mod download
+mkdir -p .modcache/github.com/\!cosm\!wasm
+cp -r "$(go env GOMODCACHE)"/cache/download/github.com/\!cosm\!wasm/priv_wasmd_sec \
+      "$(go env GOMODCACHE)"/cache/download/github.com/\!cosm\!wasm/priv_wasmvm_sec \
+      .modcache/github.com/\!cosm\!wasm/
+```
+
+2. In the Dockerfile, replace the `go mod download` step and the `ADD` of the wasmvm release asset (plus any `cp` of it) with the block below. Use `/v2` or `/v3` to match your line, and the checksums from the table above:
+
+```dockerfile
+COPY .modcache/ /modcache/
+ENV GOPROXY=file:///modcache,https://proxy.golang.org,direct
+RUN go mod download
+RUN apk add --no-cache xz \
+ && unxz -c "$(go list -mod=readonly -m -f '{{.Dir}}' github.com/CosmWasm/wasmvm/v2)/internal/api/libwasmvm_muslc.$(uname -m).a.xz" \
+      > "/lib/libwasmvm_muslc.$(uname -m).a"
+RUN sha256sum "/lib/libwasmvm_muslc.$(uname -m).a" | grep -E "<x86_64 sha256>|<aarch64 sha256>"
+```
+
+Do not commit `.modcache/`, and make sure `.dockerignore` does not exclude it. If your Dockerfile already sets `GOPROXY` or mounts a cache on `/go/pkg/mod`, keep your `GOPROXY` entries after the `file://` one and put the cache mount on the `unxz` line too.
+
+Once built, distribute the compiled binary, plus the shared library for dynamic builds, to your validators. On each node, `<binary> query wasm libwasmvm-version` must print the wasmvm version from the table before the coordinated upgrade.
 
 ---
 
