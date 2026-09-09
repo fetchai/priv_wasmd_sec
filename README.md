@@ -128,6 +128,7 @@ RUN apk add --no-cache xz \
       > "/lib/libwasmvm_muslc.$(uname -m).a"
 RUN sha256sum "/lib/libwasmvm_muslc.$(uname -m).a" | grep -E "<x86_64 sha256>|<aarch64 sha256>"
 ```
+Ensure you update the `<x86_64 sha256>|<aarch64 sha256>` string with the relevant wasmvm checksum for your version from the `Static library checksums` table above.
 
 Do not commit `.modcache/`, and make sure `.dockerignore` does not exclude it. If your Dockerfile already sets `GOPROXY` or mounts a cache on `/go/pkg/mod`, keep your `GOPROXY` entries after the `file://` one and put the cache mount on the `unxz` line too.
 
