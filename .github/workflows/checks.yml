@@ -83,7 +83,7 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.11.3
-          args: --tests=false --timeout=5m0s
+          args: --tests=false --timeout=10m0s
 
   test-cover:
     runs-on: ubuntu-latest
